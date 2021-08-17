@@ -6,7 +6,7 @@
       :goods-item="item"
     ></goods-list-item>
     <!-- 展示父组件传过来的goods[type].list -->
-    {{ goods }}
+    <!-- {{ goods }} -->
   </div>
 </template>
 

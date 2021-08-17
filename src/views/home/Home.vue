@@ -4,8 +4,18 @@
       <!-- 使用center插槽 -->
       <div slot="center">购物街</div>
     </nav-bar>
+    <!-- 通过v-bind传入标题名 -->
+    <!-- 动态绑定class，实现吸顶效果 -->
+    <tab-control
+      class="isShowTab"
+      :titles="['流行', '新款', '精选']"
+      @tabClick="tabClick"
+      ref="changeIndex"
+      v-show="isTabFixed"
+    />
     <!-- :probe-type传过去的是值， probe-type传过去的是字符串 -->
     <!-- @scroll: 接收Scroll.vue传来的实时滚动位置 -->
+    <!-- @pullingUp="loadMore" 上拉加载更多 -->
     <scroll
       class="content"
       ref="scroll"
@@ -14,14 +24,16 @@
       :pull-up-load="true"
       @pullingUp="loadMore"
     >
-      <home-swiper :banners="banners" />
+      <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad" />
       <home-recommend-view :recommends="recommends" />
       <feature-view />
       <!-- 通过v-bind传入标题名 -->
+      <!-- 动态绑定class，实现吸顶效果 -->
       <tab-control
         class="tab-control"
         :titles="['流行', '新款', '精选']"
         @tabClick="tabClick"
+        ref="tabControl"
       />
       <!-- 通过v-bind动态给GoodsList组件中的props中的goods赋值 -->
       <!-- 这里就是把goods['pop'].list赋值给GoodsList组件中的props中的goods -->
@@ -61,9 +73,11 @@ import BackTop from "components/content/backTop/BackTop";
 // 面向home.js开发
 // 导入封装好的请求方法
 import { getHomeMultidata, getHomeGoods } from "network/home";
+import { debounce } from "common/utils";
 
 export default {
   name: "Home",
+
   components: {
     NavBar,
     HomeSwiper,
@@ -74,6 +88,7 @@ export default {
     Scroll,
     BackTop,
   },
+
   data() {
     return {
       // 保存getHomeMultidata的res
@@ -88,22 +103,54 @@ export default {
       },
       currentType: "pop",
       isShowBackTop: false,
+      // tab栏距离顶部的距离
+      tabOffsetTop: 0,
+      isTabFixed: false,
+      saveY: 0,
     };
   },
+
   computed: {
     showGoods() {
       return this.goods[this.currentType].list;
     },
   },
+
   // 在组建创建好后发送网络请求
   // 声明生命周期函数
   created() {
-    // 调用methods中封装好的getHomeMultidata()方法
+    // 调用methods中封装好的getHomeMultidata()方法请求多个数据
     this.getHM();
+
+    // 请求商品数据
     this.getHG("pop");
     this.getHG("new");
     this.getHG("sell");
   },
+
+  mounted() {
+    // 1.图片加载完成的事件监听
+    const refresh = debounce(this.$refs.scroll.refresh, 500);
+
+    // 默认情况下$bus是没有值的，需要再main.js中new一个vue实例赋值给事件总线
+    // 在组件创建好后就监听事件总线传过来的事件(监听图片加载完成事件)
+    // 如果监听到了，就执行箭头函数
+    this.$bus.$on("itemImageLoad", () => {
+      refresh();
+      // this.$refs.scroll.refresh();
+    });
+  },
+  activated() {
+    // 当该组件被再次激活时，迅速滚动到上次离开时的位置
+    this.$refs.scroll.scrollTo(0, this.saveY, 0);
+    this.$refs.scroll.refresh();
+  },
+
+  deactivated() {
+    // 记录离开当前组件时的Y坐标
+    this.saveY = this.$refs.scroll.getScrollY();
+  },
+
   methods: {
     // 将请求封装到methods中
     getHM() {
@@ -118,6 +165,7 @@ export default {
         this.recommends = res.data.recommend.list;
       });
     },
+
     getHG(type) {
       // 2.请求商品数据
       // 得到当前类型的page，然后加一
@@ -126,6 +174,7 @@ export default {
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page += 1;
 
+        // 完成上拉加载更多后, 就执行一次
         this.$refs.scroll.fPullUp();
       });
     },
@@ -144,6 +193,8 @@ export default {
           this.currentType = "sell";
           break;
       }
+      this.$refs.tabControl.currentIndex = index;
+      this.$refs.changeIndex.currentIndex = index;
     },
 
     // 回到顶部事件监听
@@ -158,12 +209,24 @@ export default {
 
     // 实时监听滚动事件
     contentScroll(position) {
+      // 1. 判断回到顶部按钮是否显示
       this.isShowBackTop = -position.y > 1000;
+
+      // 2. 决定tabControl是否吸顶(position: fixed)
+      this.isTabFixed = -position.y > this.tabOffsetTop;
     },
 
     // 上拉加载更多事件
     loadMore() {
       this.getHG(this.currentType);
+      // this.$refs.scroll.scroll.refresh();
+    },
+
+    // 轮播图加载完成事件监听
+    swiperImageLoad() {
+      // 获取到tabControl的OffsetTop
+      // 所有组件都一个$el属性，用于获取组件的标签元素
+      this.tabOffsetTop = this.$refs.tabControl.$el.offsetTop;
     },
   },
 };
@@ -171,7 +234,7 @@ export default {
 
 <style scoped>
 #home {
-  padding-top: 44px;
+  /* padding-top: 44px; */
   /* 
     vh就是当前屏幕可见高度的1%，也就是说 height:100vh == height:100% 
     当元素没有内容时候，设置height:100%，该元素不会被撑开，此时高度为0，
@@ -186,29 +249,28 @@ export default {
   color: #fff;
 
   /* 固定顶部栏 */
-  position: fixed;
+  /* position: fixed;
   left: 0;
   right: 0;
   top: 0;
   bottom: 0;
-  z-index: 9;
-}
-
-.tab-control {
-  /* 当滚动到距顶部44px时，sticky会自动把position改为fixed,以此来固定标题栏 */
-  position: sticky;
-  top: 44px;
-  z-index: 9;
+  z-index: 9; */
 }
 
 .content {
   height: calc(100% - 93px);
   overflow: hidden;
   position: absolute;
-  top: 44px;
+  top: 43px;
   bottom: 49px;
   left: 0;
   right: 0px;
+}
+
+.isShowTab {
+  position: relative;
+  top: -2px;
+  z-index: 9;
 }
 
 /* .content{

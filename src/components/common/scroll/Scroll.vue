@@ -44,27 +44,40 @@ export default {
     });
 
     // 2.监听滚动位置，显示或隐藏回到顶部按钮
-    this.scroll.on("scroll", (position) => {
-      // 将实时滚动位置发出，传到Home组件
-      this.$emit("scroll", position);
-    });
+    if (this.probeType == 2 || this.probeType == 3) {
+      this.scroll.on("scroll", (position) => {
+        // 将实时滚动位置发出，传到Home组件
+        this.$emit("scroll", position);
+      });
+    }
 
     // 3.监听上拉加载事件
-    this.scroll.on("pullingUp", () => {
-      // 一旦滚动到底部，就传给Home
-      this.$emit("pullingUp");
-    });
+    if (this.pullUpLoad) {
+      this.scroll.on("pullingUp", () => {
+        // 一旦滚动到底部，就传给Home
+        this.$emit("pullingUp");
+      });
+    }
   },
   methods: {
     // time = 300: 默认值为300
     scrollTo(x, y, time = 300) {
       // 先拿到scroll参数，再调用scrollTo()方法
-      this.scroll.scrollTo(x, y, time);
+      this.scroll && this.scroll.scrollTo(x, y, time);
     },
 
     // 封装一个scroll
     fPullUp() {
       this.scroll.finishPullUp();
+    },
+
+    refresh() {
+      this.scroll && this.scroll.refresh();
+    },
+
+    // 获取离开当前组件时Y的坐标
+    getScrollY() {
+      return this.scroll ? this.scroll.y : 0;
     },
   },
 };

@@ -3,7 +3,8 @@
     <swiper-item v-for="(item, index) in banners" :key="index">
       <!-- 如果用item中的属性，需要绑定 -->
       <a :href="item.link">
-        <img :src="item.image" alt="" />
+        <!-- @load  监听图片是否加载完成事件 -->
+        <img :src="item.image" alt="" @load="imageLoad" />
       </a>
     </swiper-item>
   </swiper>
@@ -21,13 +22,26 @@ export default {
     banners: {
       type: Array,
       default() {
-        return []
+        return [];
       },
     },
+  },
+  data() {
+    return {
+      isLoad: false,
+    };
   },
   components: {
     SwiperItem,
     Swiper,
+  },
+  methods: {
+    imageLoad() {
+      if (!this.isLoad) {
+        this.$emit("swiperImageLoad");
+        this.isLoad = true;
+      }
+    },
   },
 };
 </script>
