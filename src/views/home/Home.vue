@@ -69,11 +69,13 @@ import Scroll from "components/common/scroll/Scroll";
 // 导入回到顶部组件
 import BackTop from "components/content/backTop/BackTop";
 
+// 导入混路
+import { itemImageListenerMixin } from "common/mixin";
+
 // js导入
 // 面向home.js开发
 // 导入封装好的请求方法
 import { getHomeMultidata, getHomeGoods } from "network/home";
-import { debounce } from "common/utils";
 
 export default {
   name: "Home",
@@ -88,6 +90,8 @@ export default {
     Scroll,
     BackTop,
   },
+
+  mixins: [itemImageListenerMixin],
 
   data() {
     return {
@@ -128,18 +132,8 @@ export default {
     this.getHG("sell");
   },
 
-  mounted() {
-    // 1.图片加载完成的事件监听
-    const refresh = debounce(this.$refs.scroll.refresh, 500);
+  mounted() {},
 
-    // 默认情况下$bus是没有值的，需要再main.js中new一个vue实例赋值给事件总线
-    // 在组件创建好后就监听事件总线传过来的事件(监听图片加载完成事件)
-    // 如果监听到了，就执行箭头函数
-    this.$bus.$on("itemImageLoad", () => {
-      refresh();
-      // this.$refs.scroll.refresh();
-    });
-  },
   activated() {
     // 当该组件被再次激活时，迅速滚动到上次离开时的位置
     this.$refs.scroll.scrollTo(0, this.saveY, 0);
@@ -149,6 +143,9 @@ export default {
   deactivated() {
     // 记录离开当前组件时的Y坐标
     this.saveY = this.$refs.scroll.getScrollY();
+
+    // 取消全局监听
+    this.$bus.$off("itemImageLoad", this.itemImageListener);
   },
 
   methods: {

@@ -11,6 +11,13 @@ export function getDetail(iid) {
     })
 }
 
+// 推荐
+export function getRecommend() {
+    return request({
+        url: "/recommend"
+    })
+}
+
 // 定义一个商品信息类，请求需要用到的商品信息，用到详情页中
 export class GoodsInfo {
     constructor(itemInfo, columns, services) {

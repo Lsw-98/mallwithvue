@@ -1,16 +1,18 @@
 <template>
   <div id="detail">
     <detail-nav-bar class="detail-nav"> </detail-nav-bar>
-    <scroll class="content-scroll" res="scroll">
+    <scroll class="content-scroll" ref="scroll">
       <!-- 4. 动态绑定轮播图数据 -->
       <detail-swiper-bar :swiper-image="swiperImage"></detail-swiper-bar>
       <detail-base-info :goods="goodsInfo"></detail-base-info>
       <detail-shop-info :shop="shopInfo"></detail-shop-info>
       <detail-goods-info
         :detail-info="detailMessage"
-        @imageLoad="isImageLoad"
+        @imageLoad="isImageLoad()"
       ></detail-goods-info>
       <detail-param-info :param-info="paramsInfo"></detail-param-info>
+      <detail-comment-info :comment-info="commentInfo"></detail-comment-info>
+      <goods-list :goods="recommends"></goods-list>
     </scroll>
   </div>
 </template>
@@ -28,11 +30,25 @@ import DetailShopInfo from "./childComps/DetailShopInfo";
 import DetailGoodsInfo from "./childComps/DetailGoodsInfo";
 // 导入商品参数信息组件
 import DetailParamInfo from "./childComps/DetailParamInfo";
+// 导入商品评论信息组件
+import DetailCommentInfo from "./childComps/DetailCommentInfo";
 
 // 导入betterScroll
 import Scroll from "components/common/scroll/Scroll";
 
-import { getDetail, GoodsInfo, ShopInfo, GoodsParam } from "network/detail";
+// 导入GoodList组件显示推荐商品
+import GoodsList from "components/content/goods/GoodsList";
+
+// 导入混路
+import { itemImageListenerMixin } from "common/mixin";
+
+import {
+  getDetail,
+  GoodsInfo,
+  ShopInfo,
+  GoodsParam,
+  getRecommend,
+} from "network/detail";
 
 export default {
   name: "Detail",
@@ -44,8 +60,12 @@ export default {
     DetailShopInfo,
     DetailGoodsInfo,
     DetailParamInfo,
+    DetailCommentInfo,
     Scroll,
+    GoodsList,
   },
+
+  mixins: [itemImageListenerMixin],
 
   data() {
     return {
@@ -56,6 +76,10 @@ export default {
       shopInfo: {},
       detailMessage: {},
       paramsInfo: {},
+      commentInfo: {},
+
+      // 推荐数据
+      recommends: [],
     };
   },
 
@@ -92,12 +116,25 @@ export default {
         data.itemParams.info,
         data.itemParams.rule
       );
+
+      // 获取评论信息
+      if (data.rate.cRate !== 0) {
+        this.commentInfo = data.rate.list[0];
+      }
+    });
+
+    // 3. 请求推荐数据
+    getRecommend().then((res) => {
+      this.recommends = res.data.list;
     });
   },
 
-  mounted() {},
+  mounted() {
+  },
 
-  activated() {},
+  destroyed() {
+    this.$bus.$off("itemImageLoad", this.itemImageListener);
+  },
 };
 </script>
 
