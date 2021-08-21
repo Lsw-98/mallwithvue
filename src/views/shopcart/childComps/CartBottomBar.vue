@@ -11,7 +11,7 @@
     <div class="price">
       <span>合计:{{ totalPrice }}</span>
     </div>
-    <div class="buy">
+    <div class="buy" @click="toBuy">
       <span>购买({{ checkedLength }})</span>
     </div>
   </div>
@@ -24,6 +24,9 @@ export default {
   name: "CartBottomBar",
   components: {
     CheckButton,
+  },
+  data() {
+    return {};
   },
   computed: {
     totalPrice() {
@@ -58,6 +61,13 @@ export default {
         this.$store.state.cartList.forEach((item) => (item.checked = false));
       } else {
         this.$store.state.cartList.forEach((item) => (item.checked = true));
+      }
+    },
+    toBuy() {
+      if (!this.allChecked) {
+        this.$toast.show("请选择商品");
+      } else {
+        this.$toast.show("正在前往购买界面...");
       }
     },
   },

@@ -69,6 +69,8 @@ import { itemImageListenerMixin } from "common/mixin";
 // 导入防抖
 import { debounce } from "common/utils";
 
+import { mapActions } from "vuex";
+
 import {
   getDetail,
   GoodsInfo,
@@ -119,6 +121,7 @@ export default {
   },
 
   methods: {
+    ...mapActions(["addCart"]),
     isImageLoad() {
       this.$refs.scroll.refresh();
       // 调用getThemeTopY()方法
@@ -174,8 +177,13 @@ export default {
       // vuex管理商品信息
       // 使用commit方法传product
       // this.$store.commit("addCart", product);   // mutations中调用方式
-      this.$store.dispatch("addCart", product); // actions中调用方式
-      console.log(this.$store.state.cartList);
+      // actions中调用方式
+      // this.$store.dispatch("addCart", product).then((res) => {
+      //   console.log(res);
+      // });
+      this.addCart(product).then((res) => {
+        this.$toast.show(res);
+      });
     },
   },
 

@@ -1,7 +1,7 @@
 <template>
   <div class="goods-item" @click="itemClick">
     <!-- @load="imageload" 监听图片是否加载完成, 当图片加载完后，就会执行imageLoad()方法-->
-    <img :src="isShowImage" alt="" @load="imageLoad" />
+    <img v-lazy="isShowImage" alt="" @load="imageLoad" />
     <div class="goods-info">
       <p>{{ goodsItem.title }}</p>
       <span class="price">{{ goodsItem.price }}</span>
